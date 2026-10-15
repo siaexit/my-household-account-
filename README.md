@@ -9,6 +9,35 @@
 | `infra/` | CloudFormation (S3 + CloudFront + Lambda) |
 | `docs/` | AI 開発フロー、AWS デプロイ手順 |
 
+## 開発環境の準備
+
+VS Code で Docker を使わずに開発する場合は、次を用意します。
+
+- Node.js 22 (npm を含む)
+- Python 3.12 以降
+
+Node.js は [公式サイト](https://nodejs.org/ja/download) から入手できます。
+VS Code のターミナルでバージョンを確認します。
+
+```bash
+node --version
+npm --version
+python --version
+```
+
+Web の依存パッケージは、初回セットアップ時に `web` ディレクトリでインストールします。
+
+```bash
+cd web
+npm ci
+```
+
+- `npm ci`: `package-lock.json` に記録された依存関係をインストールします。通常はこちらを使います。
+- `npm install`: 依存パッケージの追加・更新時に使います。更新後は `package-lock.json` もコミットします。
+
+Docker Compose の場合、Web の依存パッケージはイメージのビルド時にインストールされます。
+そのため、ホスト側で `npm ci` を実行する必要はありません。
+
 ## 起動
 
 ### Docker Compose を使う場合
@@ -36,27 +65,49 @@ docker compose down
 
 ### Docker を使わずに起動する場合
 
-Web と API を別々のターミナルで起動します。
+Web と API を VS Code の別々のターミナルで起動します。Docker Compose は起動しないでください。
 
-Web:
+#### Web
+
+初回のみ、依存パッケージをインストールします。
 
 ```bash
 cd web
 npm ci
+```
+
+起動するたびに、`web` ディレクトリで次を実行します。
+
+```bash
 npm run dev
 ```
 
-API (Git Bash):
+#### API (Git Bash)
+
+初回のみ、仮想環境を作成して依存パッケージをインストールします。
 
 ```bash
 cd api
 python -m venv .venv
 source .venv/Scripts/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+python -m pip install -r requirements.txt
 ```
 
-API の仮想環境を有効化した後は、Web と API をそれぞれのターミナルで実行したままにします。Windows PowerShell では仮想環境の有効化に `.\.venv\Scripts\Activate.ps1` を使います。
+起動するたびに、`api` ディレクトリで仮想環境を有効化してからAPIを起動します。
+
+```bash
+source .venv/Scripts/activate
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Windows PowerShell を使う場合は、`api` ディレクトリで次を実行します。
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+起動中は両方のターミナルを開いたままにします。Web は http://localhost:3000、API ドキュメントは http://localhost:8000/docs です。停止するときは各ターミナルで `Ctrl+C` を押します。
 
 ## 開発・テスト
 
