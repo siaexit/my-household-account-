@@ -39,7 +39,7 @@ class Summary(BaseModel):
     balance: int
 
 
-# In-memory store (demo). Replace with DynamoDB/RDS for persistence.
+# デモ用のメモリ保存。再起動でデータが消えるため、永続化時は DynamoDB 等へ差し替える。
 _store: dict[str, Transaction] = {}
 
 
@@ -73,4 +73,4 @@ def summary() -> Summary:
     return Summary(income=income, expense=expense, balance=income - expense)
 
 
-handler = Mangum(app)  # AWS Lambda entrypoint
+handler = Mangum(app)

@@ -9,15 +9,11 @@
 | `infra/` | CloudFormation (S3 + CloudFront + Lambda) |
 | `docs/` | AI 開発フロー、AWS デプロイ手順 |
 
-## 開発環境の準備
-
-VS Code で Docker を使わずに開発する場合は、次を用意します。
+## 前提
 
 - Node.js 22 (npm を含む)
 - Python 3.12 以降
-
-Node.js は [公式サイト](https://nodejs.org/ja/download) から入手できます。
-VS Code のターミナルでバージョンを確認します。
+- Docker Desktop (Docker Compose で起動する場合のみ)
 
 ```bash
 node --version
@@ -25,97 +21,73 @@ npm --version
 python --version
 ```
 
-Web の依存パッケージは、初回セットアップ時に `web` ディレクトリでインストールします。
-
-```bash
-cd web
-npm ci
-```
-
-- `npm ci`: `package-lock.json` に記録された依存関係をインストールします。通常はこちらを使います。
-- `npm install`: 依存パッケージの追加・更新時に使います。更新後は `package-lock.json` もコミットします。
-
-Docker Compose の場合、Web の依存パッケージはイメージのビルド時にインストールされます。
-そのため、ホスト側で `npm ci` を実行する必要はありません。
-
 ## 起動
 
-### Docker Compose を使う場合
+開発時はローカル起動を使う。ソース変更が自動で反映される。
+Docker Compose はビルド済みの状態をまとめて確認する用途で、ソース変更の反映には再ビルドが必要。
 
-1. Docker Desktop を起動し、画面上で Docker Engine が起動完了するまで待ちます。
-2. このリポジトリのルート (この README と `docker-compose.yml` がある場所) で、次を実行します。
+### ローカル起動 (開発用)
 
-```bash
-docker compose up --build
-```
-
-初回は Docker イメージや依存パッケージを取得してビルドするため、完了まで時間がかかることがあります。
-
-- Web アプリ: http://localhost:3000
-- FastAPI ドキュメント: http://localhost:8000/docs
-- API ヘルスチェック: http://localhost:8000/health
-
-起動中のログを表示したまま使う場合は、そのターミナルを開いたままにします。停止するときは同じターミナルで `Ctrl+C` を押します。バックグラウンドで起動する場合は `docker compose up --build -d` を使い、停止時はリポジトリのルートで次を実行します。
-
-```bash
-docker compose down
-```
-
-`failed to connect to the docker API` や `dockerDesktopLinuxEngine` が見つからないエラーが出た場合は、Docker Desktop が起動していることを確認してから、コマンドを再実行してください。
-
-### Docker を使わずに起動する場合
-
-Web と API を VS Code の別々のターミナルで起動します。Docker Compose は起動しないでください。
+Web と API を別々のターミナルで起動する。Docker Compose が起動中の場合は先に `docker compose down` で停止する。
 
 #### Web
 
-初回のみ、依存パッケージをインストールします。
-
 ```bash
 cd web
-npm ci
-```
-
-起動するたびに、`web` ディレクトリで次を実行します。
-
-```bash
+npm ci          # 初回のみ
 npm run dev
 ```
 
-#### API (Git Bash)
+- URL: http://localhost:3000
+- `npm ci` は `package-lock.json` どおりに依存関係を入れる。依存の追加・更新時は `npm install` を使い、`package-lock.json` も変更対象に含める。
 
-初回のみ、仮想環境を作成して依存パッケージをインストールします。
+#### API
+
+初回のみ、仮想環境の作成と依存関係のインストールを行う。
 
 ```bash
 cd api
 python -m venv .venv
-source .venv/Scripts/activate
+source .venv/Scripts/activate      # PowerShell: .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 ```
 
-起動するたびに、`api` ディレクトリで仮想環境を有効化してからAPIを起動します。
+起動のたびに、仮想環境を有効化してから起動する。
 
 ```bash
-source .venv/Scripts/activate
+cd api
+source .venv/Scripts/activate      # PowerShell: .\.venv\Scripts\Activate.ps1
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-Windows PowerShell を使う場合は、`api` ディレクトリで次を実行します。
+- API ドキュメント: http://localhost:8000/docs
+- ヘルスチェック: http://localhost:8000/health
 
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m uvicorn app.main:app --reload --port 8000
-```
+停止は各ターミナルで `Ctrl+C`。
 
-起動中は両方のターミナルを開いたままにします。Web は http://localhost:3000、API ドキュメントは http://localhost:8000/docs です。停止するときは各ターミナルで `Ctrl+C` を押します。
+### Docker Compose
 
-## 開発・テスト
+1. Docker Desktop を起動し、Docker Engine の起動完了を待つ
+2. リポジトリのルートで実行する
 
 ```bash
-cd web && npm ci && npm run dev
-cd web && npm test              # Vitest
-cd web && npx playwright install chromium && npm run test:e2e
-cd api && pip install -r requirements.txt && pytest
+docker compose up --build        # フォアグラウンド。停止は Ctrl+C
+docker compose up --build -d     # バックグラウンド
+docker compose down              # 停止・削除
+```
+
+- Web: http://localhost:3000
+- API ドキュメント: http://localhost:8000/docs
+- 初回はイメージ取得とビルドに時間がかかる
+- Web の依存関係はイメージのビルド時に入るため、ホスト側の `npm ci` は不要
+- `failed to connect to the docker API` が出た場合は Docker Desktop の起動を確認して再実行する
+
+## テスト
+
+```bash
+cd web && npm test                                              # Vitest
+cd web && npx playwright install chromium && npm run test:e2e   # Playwright (初回のみ install)
+cd api && python -m pytest                                      # pytest (仮想環境を有効化して実行)
 ```
 
 詳細: [docs/WORKFLOW.md](docs/WORKFLOW.md), [docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md)
