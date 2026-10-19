@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatAmountInput,
   formatYen,
+  parseAmount,
   sortByDateDesc,
   summarize,
+  todayString,
+  updateTransaction,
   validateTransaction,
   type Transaction,
 } from "./ledger";
@@ -53,5 +57,47 @@ describe("formatYen", () => {
   it("formats values", () => {
     expect(formatYen(1234)).toBe("¥1,234");
     expect(formatYen(-500)).toBe("-¥500");
+  });
+});
+
+describe("formatAmountInput / parseAmount", () => {
+  it("adds comma separators and drops non-digits", () => {
+    expect(formatAmountInput("1234567")).toBe("1,234,567");
+    expect(formatAmountInput("1,2a3")).toBe("123");
+    expect(formatAmountInput("")).toBe("");
+  });
+  it("parses formatted text back to a number", () => {
+    expect(parseAmount("1,234,567")).toBe(1234567);
+    expect(parseAmount("")).toBe(0);
+  });
+});
+
+describe("todayString", () => {
+  it("returns a zero-padded local date", () => {
+    expect(todayString(new Date(2024, 0, 5))).toBe("2024-01-05");
+    expect(todayString(new Date(2024, 11, 31))).toBe("2024-12-31");
+  });
+});
+
+describe("updateTransaction", () => {
+  it("replaces only the target without mutating", () => {
+    const list = [tx({ id: "a" }), tx({ id: "b", amount: 200 })];
+    const next = updateTransaction(list, "a", {
+      type: "income",
+      amount: 999,
+      category: "給与",
+      date: "2024-03-01",
+      memo: "更新",
+    });
+    expect(next[0]).toEqual({
+      id: "a",
+      type: "income",
+      amount: 999,
+      category: "給与",
+      date: "2024-03-01",
+      memo: "更新",
+    });
+    expect(next[1]).toBe(list[1]);
+    expect(list[0].amount).toBe(100);
   });
 });

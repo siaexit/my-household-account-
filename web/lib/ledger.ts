@@ -49,3 +49,26 @@ export function sortByDateDesc(transactions: Transaction[]): Transaction[] {
 export function formatYen(value: number): string {
   return `${value < 0 ? "-" : ""}¥${Math.abs(value).toLocaleString("ja-JP")}`;
 }
+
+export function formatAmountInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  return digits === "" ? "" : Number(digits).toLocaleString("ja-JP");
+}
+
+export function parseAmount(formatted: string): number {
+  return Number(formatted.replace(/,/g, ""));
+}
+
+export function todayString(now: Date = new Date()): string {
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+export function updateTransaction(
+  transactions: Transaction[],
+  id: string,
+  input: NewTransaction,
+): Transaction[] {
+  return transactions.map((t) => (t.id === id ? { ...input, id } : t));
+}
