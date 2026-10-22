@@ -90,4 +90,4 @@ cd web && npx playwright install chromium && npm run test:e2e   # Playwright (�
 cd api && python -m pytest                                      # pytest (仮想環境を有効化して実行)
 ```
 
-詳細: [docs/WORKFLOW.md](docs/WORKFLOW.md), [docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md)
+詳細: [docs/WORKFLOW.md](docs/WORKFLOW.md), [docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md), [docs/README_AWS.md](docs/README_AWS.md)
